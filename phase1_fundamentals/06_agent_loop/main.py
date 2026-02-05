@@ -93,7 +93,9 @@ def example_2_streaming():
     """
     示例2：实时查看 Agent 的输出
 
-    使用 .stream() 方法
+    两种流式模式：
+    1. stream_mode="updates" - 按步骤输出（默认）
+    2. stream_mode="messages" - 逐 token 输出
     """
     print("\n" + "="*70)
     print("示例 2：流式输出")
@@ -104,28 +106,49 @@ def example_2_streaming():
         tools=[calculator, get_weather]
     )
 
-    print("\n问题：北京天气如何？然后计算 10 加 20")
-    print("\n流式输出（实时显示）：")
+    # ========== 方式 1：按步骤输出 (stream_mode="updates") ==========
+    print("\n【方式 1：按步骤输出】")
+    print("问题：北京天气如何？")
     print("-" * 70)
 
-    # 使用 stream 方法
-    for chunk in agent.stream({
-        "messages": [{"role": "user", "content": "北京天气如何？"}]
-    }):
-        # chunk 是字典，包含更新的状态
-        if 'messages' in chunk:
-            # 获取最新的消息
-            latest_msg = chunk['messages'][-1]
+    for chunk in agent.stream(
+        {"messages": [{"role": "user", "content": "北京天气如何？"}]},
+        stream_mode="updates"  # 默认模式，每个节点执行完返回一次
+    ):
+        for node_name, node_output in chunk.items():
+            if 'messages' in node_output:
+                latest_msg = node_output['messages'][-1]
+                msg_type = latest_msg.__class__.__name__
 
-            # 如果是 AI 的最终回答
-            if hasattr(latest_msg, 'content') and latest_msg.content:
-                if not hasattr(latest_msg, 'tool_calls') or not latest_msg.tool_calls:
-                    print(f"\n最终回答: {latest_msg.content}")
+                if msg_type == "AIMessage":
+                    if hasattr(latest_msg, 'tool_calls') and latest_msg.tool_calls:
+                        print(f"[{node_name}] AI 调用工具: {latest_msg.tool_calls[0]['name']}")
+                    elif latest_msg.content:
+                        print(f"[{node_name}] AI 最终回答: {latest_msg.content}")
+                elif msg_type == "ToolMessage":
+                    print(f"[{node_name}] 工具返回: {latest_msg.content[:50]}...")
+
+    # ========== 方式 2：逐 token 输出 (stream_mode="messages") ==========
+    print("\n\n【方式 2：逐 token 输出】")
+    print("问题：介绍langchain 500字左右")
+    print("-" * 70)
+    print("实时输出: ", end="", flush=True)
+
+    for chunk, metadata in agent.stream(
+        {"messages": [{"role": "user", "content": "介绍langchain 500字左右"}]},
+        stream_mode="messages"  # 逐 token 输出
+    ):
+        # 只显示 model 节点的输出（过滤工具调用等）
+        if metadata.get("langgraph_node") == "model":
+            if hasattr(chunk, 'content') and chunk.content:
+                print(chunk.content, end="", flush=True)
+
+    print("\n")  # 换行
 
     print("\n关键点：")
-    print("  - stream() 返回生成器，逐步返回结果")
-    print("  - 用于实时显示进度")
-    print("  - 适合长时间运行的任务")
+    print("  - stream_mode='updates': 按步骤输出，适合显示进度")
+    print("  - stream_mode='messages': 逐 token 输出，适合打字机效果")
+    print("  - messages 模式返回 (chunk, metadata) 元组")
 
 
 # ============================================================================
@@ -195,15 +218,18 @@ def example_4_inspect_state():
         step += 1
         print(f"\n步骤 {step}:")
 
-        if 'messages' in chunk:
-            latest = chunk['messages'][-1]
-            msg_type = latest.__class__.__name__
-            print(f"  类型: {msg_type}")
+        # chunk 格式: {'model': {'messages': [...]}} 或 {'tools': {'messages': [...]}}
+        for node_name, node_output in chunk.items():
+            if 'messages' in node_output:
+                latest = node_output['messages'][-1]
+                msg_type = latest.__class__.__name__
+                print(f"  节点: {node_name}")
+                print(f"  类型: {msg_type}")
 
-            if hasattr(latest, 'tool_calls') and latest.tool_calls:
-                print(f"  工具调用: {latest.tool_calls[0]['name']}")
-            elif hasattr(latest, 'content') and latest.content:
-                print(f"  内容: {latest.content[:50]}...")  # 只显示前50个字符
+                if hasattr(latest, 'tool_calls') and latest.tool_calls:
+                    print(f"  工具调用: {latest.tool_calls[0]['name']}")
+                elif hasattr(latest, 'content') and latest.content:
+                    print(f"  内容: {latest.content[:50]}...")  # 只显示前50个字符
 
     print("\n关键点：")
     print("  - stream 让你看到每个步骤")

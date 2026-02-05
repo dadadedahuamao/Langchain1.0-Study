@@ -184,16 +184,22 @@ def example_3_chat_prompt_template():
     print(f"\nAI 回复：{response.content[:150]}...\n")
 
     # 方法 2：使用字符串简写（最简洁）
+    # 直接传入字符串（不用元组），会自动被当作 human/user 消息
     print("【方法 2：字符串简写】")
 
     simple_template = ChatPromptTemplate.from_messages([
         ("system", "你是一个友好的助手"),
-        ("user", "{question}")
+        "{question}"  # 等价于 ("human", "{question}")，省略角色
     ])
 
     messages = simple_template.format_messages(question="什么是机器学习？")
+
+    print("生成的消息：")
+    for msg in messages:
+        print(f"  {msg.type}: {msg.content}")
+
     response = model.invoke(messages)
-    print(f"AI 回复：{response.content[:100]}...\n")
+    print(f"\nAI 回复：{response.content[:100]}...\n")
 
 
 # ============================================================================

@@ -95,39 +95,90 @@ print(f"使用的工具: {used_tools}")
 
 **用于实时显示 Agent 的进度**
 
-### 基本用法
+### 两种流式模式对比
+
+| 模式 | 参数 | 返回格式 | 用途 |
+|------|------|---------|------|
+| **按步骤输出** | `stream_mode="updates"` | `dict` | 显示每步进度（工具调用、结果） |
+| **逐 token 输出** | `stream_mode="messages"` | `(chunk, metadata)` 元组 | 打字机效果，实时显示文字 |
+
+---
+
+### 方式 1：按步骤输出（`stream_mode="updates"`）
+
+**特点：** 每个节点（model、tools）执行完后返回一次，适合显示执行进度。
 
 ```python
-agent = create_agent(model=model, tools=tools)
+for chunk in agent.stream(
+    {"messages": [{"role": "user", "content": "北京天气如何？"}]},
+    stream_mode="updates"  # 默认模式
+):
+    for node_name, node_output in chunk.items():
+        if 'messages' in node_output:
+            latest_msg = node_output['messages'][-1]
+            msg_type = latest_msg.__class__.__name__
 
-# 使用 .stream() 方法
-for chunk in agent.stream({"messages": [...]}):
-    # chunk 是状态更新
-    if 'messages' in chunk:
-        latest_msg = chunk['messages'][-1]
-        # 处理最新消息
-        print(latest_msg.content)
+            if msg_type == "AIMessage":
+                if hasattr(latest_msg, 'tool_calls') and latest_msg.tool_calls:
+                    print(f"[{node_name}] 调用工具: {latest_msg.tool_calls[0]['name']}")
+                elif latest_msg.content:
+                    print(f"[{node_name}] 最终回答: {latest_msg.content}")
+            elif msg_type == "ToolMessage":
+                print(f"[{node_name}] 工具返回: {latest_msg.content}")
 ```
 
-### 实时显示最终答案
+**输出示例：**
+```
+[model] 调用工具: get_weather
+[tools] 工具返回: 晴天，温度 15°C...
+[model] 最终回答: 北京今天天气晴朗，温度15°C
+```
+
+---
+
+### 方式 2：逐 token 输出（`stream_mode="messages"`）
+
+**特点：** 逐字符/token 输出，实现打字机效果。返回 `(chunk, metadata)` 元组。
 
 ```python
-for chunk in agent.stream(input):
-    if 'messages' in chunk:
-        latest = chunk['messages'][-1]
+print("回答: ", end="", flush=True)
 
-        # 只显示最终答案（不包含 tool_calls）
-        if hasattr(latest, 'content') and latest.content:
-            if not hasattr(latest, 'tool_calls') or not latest.tool_calls:
-                print(latest.content)
+for chunk, metadata in agent.stream(
+    {"messages": [{"role": "user", "content": "用一句话介绍 Python"}]},
+    stream_mode="messages"  # 逐 token 模式
+):
+    # 只显示 model 节点的输出
+    if metadata.get("langgraph_node") == "model":
+        if hasattr(chunk, 'content') and chunk.content:
+            print(chunk.content, end="", flush=True)
+
+print()  # 换行
 ```
+
+**输出效果（逐字显示）：**
+```
+回答: Python是一种简洁易读的编程语言...
+```
+
+---
+
+### 两种模式的选择
+
+| 场景 | 推荐模式 |
+|------|---------|
+| 显示 Agent 执行步骤 | `stream_mode="updates"` |
+| 聊天界面打字机效果 | `stream_mode="messages"` |
+| 调试/监控工具调用 | `stream_mode="updates"` |
+| 用户体验优化 | `stream_mode="messages"` |
+
+---
 
 ### stream vs invoke
 
 | 方法 | 返回 | 用途 |
 |-----|------|------|
 | `invoke()` | 完整结果 | 等待完成后一次性获取 |
-| `stream()` | 生成器 | 实时获取中间步骤 |
+| `stream()` | 生成器 | 实时获取中间步骤/token |
 
 ## 消息类型
 

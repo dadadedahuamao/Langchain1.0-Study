@@ -30,7 +30,7 @@ agent = create_agent(model=model, tools=[calculator])
 
 print("\n问题：10 加 20 等于多少？")
 response = agent.invoke({
-    "messages": [{"role": "user", "content": "10 加 20 等于多��？"}]
+    "messages": [{"role": "user", "content": "10 加 20 等于多少？"}]
 })
 
 print("\n完整消息历史：")

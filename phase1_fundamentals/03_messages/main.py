@@ -174,18 +174,21 @@ def example_4_optimize_history():
     # 模拟长对话
     long_conversation = [
         {"role": "system", "content": "你是助手"},
-        {"role": "user", "content": "第1个问题"},
-        {"role": "assistant", "content": "第1个回答"},
-        {"role": "user", "content": "第2个问题"},
-        {"role": "assistant", "content": "第2个回答"},
-        {"role": "user", "content": "第3个问题"},
-        {"role": "assistant", "content": "第3个回答"},
-        {"role": "user", "content": "第4个问题"},
-        {"role": "assistant", "content": "第4个回答"},
-        {"role": "user", "content": "第5个问题"},
+        {"role": "user", "content": "我叫小明"},
+        {"role": "assistant", "content": "收到···"},
+        {"role": "user", "content": "我18岁"},
+        {"role": "assistant", "content": "了解"},
+        {"role": "user", "content": "我是男生"},
+        {"role": "assistant", "content": "明白了"},
+        {"role": "user", "content": "我是中国人"},
+        {"role": "assistant", "content": "知道了"},
+        {"role": "user", "content": "给出我的信息"},
     ]
 
     print(f"原始消息数: {len(long_conversation)}")
+     # 使用未优化后的历史
+    response1 = model.invoke(long_conversation)
+    print(f"\nAI 回复: {response1.content[:100]}...")
 
     # 优化：只保留最近 2 轮
     optimized = keep_recent_messages(long_conversation, max_pairs=2)
@@ -205,21 +208,23 @@ def example_4_optimize_history():
 def example_5_simple_chatbot():
     """
     实战：构建一个记住对话的聊天机器人
+
+    对比有/无历史的差异，直观展示"遗忘"现象
     """
     print("\n" + "="*70)
     print("示例 5：实战 - 简单聊天机器人")
     print("="*70)
 
+    # === 第一部分：保存历史（能记住） ===
+    print("\n【有历史】AI 能记住对话：")
     conversation = [
-        {"role": "system", "content": "你是一个友好的助手"}
+        {"role": "system", "content": "你是一个友好的助手，回答尽量简洁"}
     ]
 
     questions = [
         "我叫李明，今年25岁",
         "我喜欢编程",
-        "我叫什么名字？",
-        "我今年多大？",
-        "我喜欢什么？"
+        "请问我叫什么名字？我今年多大？我喜欢什么？"
     ]
 
     for i, q in enumerate(questions, 1):
@@ -232,8 +237,30 @@ def example_5_simple_chatbot():
         print(f"AI: {response.content}")
         conversation.append({"role": "assistant", "content": response.content})
 
-    print(f"\n💡 总共 {len(conversation)} 条消息")
-    print("   AI 完美记住了所有信息！")
+    print(f"\n总共 {len(conversation)} 条消息，AI 完美记住了所有信息！")
+
+    # === 第二部分：不保存历史（会遗忘） ===
+    print("\n" + "-"*70)
+    print("\n【无历史】每次单独调用，AI 会遗忘：")
+
+    questions_no_history = [
+        "我叫李明，今年25岁，我喜欢编程",
+        "请问我叫什么名字？"  # 单独发送，没有上文
+    ]
+
+    for i, q in enumerate(questions_no_history, 1):
+        print(f"\n--- 第 {i} 轮（独立调用） ---")
+        print(f"用户: {q}")
+        # 每次都是独立调用，不传历史
+        response = model.invoke([
+            {"role": "system", "content": "你是一个友好的助手，回答尽量简洁"},
+            {"role": "user", "content": q}
+        ])
+        print(f"AI: {response.content}")
+
+    print("\n对比结论：")
+    print("  有历史：AI 记住了名字、年龄、爱好")
+    print("  无历史：AI 不知道你是谁（因为没有传递之前的对话）")
 
 
 # ============================================================================
@@ -245,17 +272,17 @@ def main():
     print("="*70)
 
     try:
-        # example_1_message_types()
-        # input("\n按 Enter 继续...")
+        example_1_message_types()
+        input("\n按 Enter 继续...")
 
-        # example_2_conversation_history()
-        # input("\n按 Enter 继续...")
+        example_2_conversation_history()
+        input("\n按 Enter 继续...")
 
-        # example_3_wrong_way()
-        # input("\n按 Enter 继续...")
+        example_3_wrong_way()
+        input("\n按 Enter 继续...")
 
-        # example_4_optimize_history()
-        # input("\n按 Enter 继续...")
+        example_4_optimize_history()
+        input("\n按 Enter 继续...")
 
         example_5_simple_chatbot()
 

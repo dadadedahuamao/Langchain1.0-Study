@@ -2,7 +2,7 @@
 LangChain 1.0 - Memory Basics (内存管理基础)
 ==========================================
 
-本模块重点讲解��
+本模块重点讲解
 1. InMemorySaver - LangGraph 提供的内存管理
 2. checkpointer 参数 - 为 Agent 添加内存
 3. thread_id - 会话管理

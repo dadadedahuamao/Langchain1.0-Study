@@ -165,7 +165,7 @@ def example_4_optional_params():
     print(result1)
 
     # 指定参数
-    print("\n指定返回2���结果：")
+    print("\n指定返回2条结果：")
     result2 = web_search.invoke({"query": "LangChain", "num_results": 2})
     print(result2)
 

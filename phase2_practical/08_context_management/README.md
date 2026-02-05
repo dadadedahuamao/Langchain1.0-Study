@@ -22,7 +22,7 @@ agent = create_agent(
     middleware=[
         SummarizationMiddleware(
             model="groq:llama-3.3-70b-versatile",
-            max_tokens_before_summary=500  # 超过 500 tokens 触发摘要
+            trigger=("tokens", 500)  # 超过 500 tokens 触发摘要
         )
     ]
 )
@@ -42,10 +42,13 @@ SummarizationMiddleware 自动触发
 
 ### 参数说明
 
-| 参数 | 说明 | 默认值 |
-|-----|------|--------|
+| 参数 | 说明 | 示例 |
+|-----|------|------|
 | `model` | 生成摘要的模型（可用便宜模型） | 必需 |
-| `max_tokens_before_summary` | 触发摘要的 token 阈值 | 1000 |
+| `trigger` | 触发摘要的条件 | `("tokens", 500)` 或 `("messages", 10)` |
+| `keep` | 保留多少最近消息 | `("messages", 3)` |
+
+> **注意**: `max_tokens_before_summary` 和 `messages_to_keep` 参数已废弃，请使用 `trigger` 和 `keep`。
 
 ## trim_messages（手动修剪）
 
@@ -90,7 +93,8 @@ agent = create_agent(
     middleware=[
         SummarizationMiddleware(
             model="groq:llama-3.3-70b-versatile",
-            max_tokens_before_summary=800  # 适合客服
+            trigger=("tokens", 800),  # 超过 800 tokens 触发摘要
+            keep=("messages", 5)       # 保留最近 5 条消息
         )
     ]
 )
@@ -105,7 +109,8 @@ agent = create_agent(
     middleware=[
         SummarizationMiddleware(
             model="groq:llama-3.3-70b-versatile",
-            max_tokens_before_summary=1000
+            trigger=("tokens", 1000),  # 超过 1000 tokens 触发摘要
+            keep=("messages", 3)       # 保留最近 3 条消息
         )
     ],
     checkpointer=InMemorySaver()
@@ -121,14 +126,18 @@ agent = create_agent(
 - 最近的消息完整保留
 - 对于大部分场景足够
 
-### 2. 如何选择 max_tokens_before_summary？
+### 2. 如何选择 trigger 和 keep 参数？
 
 ```python
-# 模型上下文窗口 4k → 设置 3000
-# 模型上下文窗口 8k → 设置 6000
-# 模型上下文窗口 16k → 设置 12000
-
+# trigger（触发条件）：
+# - 模型上下文窗口 4k → trigger=("tokens", 3000)
+# - 模型上下文窗口 8k → trigger=("tokens", 6000)
+# - 模型上下文窗口 16k → trigger=("tokens", 12000)
 # 留一些余量给工具调用和系统提示
+
+# keep（保留消息）：
+# - 短对话：keep=("messages", 3)  # 保留最近 3 条
+# - 长对话：keep=("messages", 5)  # 保留最近 5 条
 ```
 
 ### 3. 摘要成本高吗？
@@ -139,8 +148,17 @@ agent = create_agent(
 
 ### 4. 能自定义摘要提示词吗？
 
-目前 `SummarizationMiddleware` 使用默认提示词。
-如需自定义，可以实现自己的中间件（Module 10 会学）。
+可以！使用 `summary_prompt` 参数：
+
+```python
+SummarizationMiddleware(
+    model="groq:llama-3.3-70b-versatile",
+    trigger=("tokens", 800),
+    summary_prompt="请总结对话，重点保留：用户姓名、关键事实、待办事项"
+)
+```
+
+如需更复杂的控制，可以实现自己的中间件（Module 10 会学）。
 
 ## 最佳实践
 
@@ -152,8 +170,9 @@ agent = create_agent(
     middleware=[
         SummarizationMiddleware(
             model="groq:llama-3.3-70b-versatile",
-            max_tokens_before_summary=500  # 短对话
-            # max_tokens_before_summary=2000  # 长对话
+            trigger=("tokens", 500),  # 短对话
+            # trigger=("tokens", 2000),  # 长对话
+            keep=("messages", 3)       # 保留最近 3 条
         )
     ],
     checkpointer=InMemorySaver()
@@ -162,7 +181,7 @@ agent = create_agent(
 # 2. 使用便宜模型摘要（降低成本）
 SummarizationMiddleware(
     model="groq:llama-3.3-70b-versatile",  # 用便宜模型摘要
-    max_tokens_before_summary=1000
+    trigger=("tokens", 1000)
 )
 
 # 3. 监控摘要触发频率
@@ -175,7 +194,7 @@ SummarizationMiddleware(
 1. **默认问题**：对话历史无限增长
 2. **推荐方案**：`SummarizationMiddleware`
 3. **配置位置**：`middleware=[]` 参数
-4. **触发条件**：`max_tokens_before_summary`
+4. **触发条件**：`trigger=("tokens", N)` 或 `trigger=("messages", N)`
 5. **自动化**：无需手动管理
 
 ## 下一步
