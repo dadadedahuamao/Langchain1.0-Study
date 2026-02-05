@@ -486,20 +486,20 @@ def main():
     print("="*70)
 
     try:
-        # example_1_with_retry()
-        # input("\n按 Enter 继续...")
+        example_1_with_retry()
+        input("\n按 Enter 继续...")
 
-        # example_2_with_fallbacks()
-        # input("\n按 Enter 继续...")
+        example_2_with_fallbacks()
+        input("\n按 Enter 继续...")
 
-        # example_3_pydantic_validation()
-        # input("\n按 Enter 继续...")
+        example_3_pydantic_validation()
+        input("\n按 Enter 继续...")
 
-        # example_4_llm_validation_retry()
-        # input("\n按 Enter 继续...")
+        example_4_llm_validation_retry()
+        input("\n按 Enter 继续...")
 
-        # example_5_custom_validation()
-        # input("\n按 Enter 继续...")
+        example_5_custom_validation()
+        input("\n按 Enter 继续...")
 
         example_6_complete_workflow()
         input("\n按 Enter 继续...")

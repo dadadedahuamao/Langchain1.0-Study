@@ -5,5 +5,13 @@ LangChain 是一个用于构建 LLM 应用的框架。
 2. Prompts - 提示词模板
 3. Chains - 链式调用
 4. Agents - 智能代理
+5. Memory - 记忆管理
+
+LangChain 1.0 引入了重大改进，包括：
+- 更简洁的 API
+- 更好的性能
+- 内置的 LangGraph 支持
+- 强大的中间件系统
 
 RAG (Retrieval-Augmented Generation) 是 LangChain 的核心应用场景之一。
+它结合了检索和生成，让 LLM 能够访问外部知识库。

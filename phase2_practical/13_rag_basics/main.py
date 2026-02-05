@@ -386,7 +386,7 @@ def example_6_rag_qa(vectorstore):
 3. 如果知识库中没有相关信息，诚实告知"""
     )
 
-    # 测试��答
+    # 测试回答
     questions = [
         "LangChain 有哪些核心组件？",
         "RAG 是什么？",

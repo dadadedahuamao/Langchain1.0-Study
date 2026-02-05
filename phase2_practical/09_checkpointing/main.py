@@ -29,12 +29,12 @@ from langchain_core.tools import tool
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 load_dotenv()
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY == "your_deepseek_api_key_here":
-    raise ValueError("请先设置 DEEPSEEK_API_KEY")
+if not GROQ_API_KEY or GROQ_API_KEY == "your_groq_api_key_here_replace_this":
+    raise ValueError("请先设置 GROQ_API_KEY")
 
-model = init_chat_model("deepseek:deepseek-chat", api_key=DEEPSEEK_API_KEY)
+model = init_chat_model("groq:llama-3.3-70b-versatile", api_key=GROQ_API_KEY)
 
 @tool
 def get_order_status(order_id: str) -> str:
