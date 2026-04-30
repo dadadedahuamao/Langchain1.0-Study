@@ -34,7 +34,7 @@ if not API_KEY:
     raise ValueError("请先设置 OPENAI_API_KEY")
 
 model = init_chat_model(
-    "openai:glm-5.1",
+    "openai:kimi-for-coding",
     api_key=API_KEY,
     base_url=BASE_URL,
 )
@@ -122,12 +122,13 @@ def example_2_pdf_parsing():
     print(f"\n[1] 生成示例 PDF: {pdf_path}")
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="LangChain 1.0 学习手册", ln=1, align="C")
+    # fpdf2 默认字体不支持中文，使用纯英文内容避免编码问题
+    pdf.set_font("Helvetica", size=12)
+    pdf.cell(200, 10, text="LangChain 1.0 Study Guide", new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(5)
-    pdf.multi_cell(0, 10, txt="LangChain 是一个用于开发 LLM 应用程序的框架。")
-    pdf.multi_cell(0, 10, txt="LangGraph 是 LangChain 的扩展，用于构建复杂的状态驱动工作流。")
-    pdf.multi_cell(0, 10, txt="本手册涵盖基础概念、实战技巧和最佳实践。")
+    pdf.multi_cell(180, 10, text="LangChain is a framework for developing LLM applications.")
+    pdf.multi_cell(180, 10, text="LangGraph extends LangChain with stateful workflow capabilities.")
+    pdf.multi_cell(180, 10, text="This guide covers fundamentals, practical skills, and best practices.")
     pdf.output(pdf_path)
     print("  已生成 3 段内容的示例 PDF")
 
