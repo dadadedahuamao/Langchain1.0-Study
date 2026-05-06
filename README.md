@@ -67,7 +67,7 @@ python phase1_fundamentals/01_hello_langchain/main.py
 
 ## 📖 学习路径
 
-本仓库采用**四阶段渐进式学习**，共 21 个模块 + 3 个综合项目：
+本仓库采用**五阶段渐进式学习**，共 31 个模块 + 3 个综合项目：
 
 ### 阶段一：基础知识（第1-2周）
 📂 `phase1_fundamentals/`
@@ -95,7 +95,7 @@ python phase1_fundamentals/01_hello_langchain/main.py
 | 13 | RAG Basics | 文档加载、向量存储、检索增强生成 |
 | 14 | RAG Advanced | 混合检索、重排序、高级 RAG 策略 |
 
-### 阶段三：LangGraph 进阶（第5-6周）
+### 阶段三：LangGraph 进阶（第5-6周）✅ 已完成
 📂 `phase3_advanced/`
 
 | 模块 | 主题 | 学习内容 |
@@ -108,14 +108,30 @@ python phase1_fundamentals/01_hello_langchain/main.py
 | 20 | Production Ready | Checkpoint 进阶、LangSmith、错误处理、成本 |
 | 21 | Multimodal & Files | 图像理解、PDF 解析、多模态消息 |
 
-### 阶段四：综合项目（第7-8周）
-📂 `phase4_projects/`
+### 阶段四：生产与前沿（第7-8周）🆕 待开发
+📂 `phase4_frontier/`
 
-| 项目 | 描述 | 核心技术 |
+| 模块 | 主题 | 学习内容 |
 |------|------|----------|
-| 研究助手 | 搜索→阅读→总结→引用 | 多 Agent、RAG、Streaming、子图 |
-| 客户支持系统 | 智能客服与工单流转 | Handoff、HITL、Memory、Checkpoint |
-| 文档问答系统 | 基于向量库的文档问答 | RAG、LangGraph、子图、可观测性 |
+| 22 | MCP (Model Context Protocol) | Agent 通过标准协议连接外部工具和数据源 |
+| 23 | SQL Agent | 自然语言查询数据库，Text-to-SQL |
+| 24 | Guardrails | 安全护栏：内容过滤、输出校验、敏感信息屏蔽 |
+| 25 | Long-Term Memory | 跨会话持久化记忆（Store API） |
+| 26 | LangGraph Functional API | 函数式 API，与 Graph API 互补的新写法 |
+| 27 | Advanced Multi-Agent | Router / Skills / Subagents 三种高级模式 |
+| 28 | Time Travel & Durable Execution | 回退历史状态、断点续跑 |
+| 29 | Deep Agents | LangChain 2025 重点推出的"全装电池"Agent 框架 |
+| 30 | Agent Testing | pytest 单元测试、集成测试、Agent 评估 |
+| 31 | Local Server & RemoteGraph | 启动 API 服务、RemoteGraph 远程调用 |
+
+### 阶段五：综合项目（第9-10周）🔨 部分完成
+📂 `phase5_projects/`
+
+| 项目 | 描述 | 核心技术 | 状态 |
+|------|------|----------|------|
+| 01 Data Analysis Agent | CSV/Excel 读取→分析→可视化→报告 | Deep Agents、Sandbox、Skills、Streaming | ⏳ 待创建 |
+| 02 全栈 SaaS Agent | 用户管理、对话历史、API 服务、Agent 后台 | LangGraph Server、RemoteGraph、FastAPI | ⏳ 待创建 |
+| 03 Enterprise RAG | 企业级文档问答系统 | RAG、LangGraph、子图、可观测性 | ✅ 已完成 |
 
 ## 📁 项目结构
 
@@ -123,18 +139,29 @@ python phase1_fundamentals/01_hello_langchain/main.py
 Langchain1.0-Study/
 ├── phase1_fundamentals/     # 阶段一：基础知识 ✅
 ├── phase2_practical/        # 阶段二：实战进阶 ✅
-├── phase3_advanced/         # 阶段三：LangGraph 进阶（进行中）
+├── phase3_advanced/         # 阶段三：LangGraph 进阶 ✅
 │   ├── 15_langgraph_low_level/      ✅
 │   ├── 16_multi_agent/              ✅
-│   ├── 17_human_in_the_loop/        🆕
-│   ├── 18_subgraphs/                🆕
-│   ├── 19_streaming_and_events/     🆕
-│   ├── 20_production_ready/         🆕
-│   └── 21_multimodal_files/         🆕
-├── phase4_projects/         # 阶段四：综合项目（待创建）
-│   ├── 01_research_assistant/
-│   ├── 02_customer_support/
-│   └── 03_document_qa/
+│   ├── 17_human_in_the_loop/        ✅
+│   ├── 18_subgraphs/                ✅
+│   ├── 19_streaming_and_events/     ✅
+│   ├── 20_production_ready/         ✅
+│   └── 21_multimodal_files/         ✅
+├── phase4_frontier/         # 阶段四：生产与前沿 🆕
+│   ├── 22_mcp/                      待创建
+│   ├── 23_sql_agent/                待创建
+│   ├── 24_guardrails/               待创建
+│   ├── 25_long_term_memory/         待创建
+│   ├── 26_langgraph_functional_api/ 待创建
+│   ├── 27_advanced_multi_agent/     待创建
+│   ├── 28_time_travel/              待创建
+│   ├── 29_deep_agents/              待创建
+│   ├── 30_testing/                  待创建
+│   └── 31_local_server/             待创建
+├── phase5_projects/         # 阶段五：综合项目（部分完成）
+│   ├── 01_data_analysis/             ⏳
+│   ├── 02_saas_agent/                ⏳
+│   └── 03_enterprise_rag/            ✅
 ├── examples/                # 扩展示例项目
 ├── docs/                    # 学习笔记和文档
 ├── asset/                   # 静态资源
@@ -161,7 +188,7 @@ python test.py
 
 ```bash
 # 进入项目目录
-cd phase4_projects/01_rag_system
+cd phase5_projects/03_enterprise_rag
 
 # 安装项目特定依赖
 pip install -r requirements.txt
@@ -187,7 +214,9 @@ jupyter notebook notebooks/
 3. **记录笔记** - 在 `docs/learning_notes/` 中记录你的学习心得
 4. **查看 README** - 每个模块都有独立的 README.md 说明核心概念
 5. **完成测试** - 运行测试文件验证你的理解
-6. **做综合项目** - 前三个阶段完成后，通过项目巩固所学
+6. **做综合项目** - 前三阶段完成后，通过 Phase 4 项目巩固所学
+7. **前沿拓展** - Phase 4 涵盖 MCP、Deep Agents、SQL Agent 等最新特性
+8. **综合实战** - Phase 5 通过完整项目融会贯通所有知识点
 
 ## 🔧 常用命令
 
@@ -208,9 +237,9 @@ pytest tests/
 
 ## 📚 重要资源
 
-- **官方文档**: https://docs.langchain.com/oss/python/langchain/quickstart
+- **官方文档**: https://docs.langchain.com/oss/python/langchain/overview
 - **迁移指南**: https://docs.langchain.com/oss/python/migrate/langchain-v1
-- **LangGraph 文档**: https://docs.langchain.com/oss/python/langgraph
+- **LangGraph 文档**: https://docs.langchain.com/oss/python/langgraph/overview
 - **LangSmith 平台**: https://smith.langchain.com
 - **GitHub 仓库**: https://github.com/langchain-ai/langchain
 
