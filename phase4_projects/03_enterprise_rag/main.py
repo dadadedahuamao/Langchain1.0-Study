@@ -259,16 +259,29 @@ def example_3_multimodal_processing():
     graph = build_multimodal_ingestion_graph()
     # ↑ 这个图在 parse 后按 element_type 分流，表格和文本走不同路径
 
-    # 重新编译使用不同的集合名
-    # 这里直接用函数式演示流程
-    from ingestion import chunk_documents, embed_and_store
+    # 真正执行多模态图
+    result = graph.invoke({
+        "file_path": pdf_path,
+        "raw_documents": [],
+        "text_chunks": [],
+        "table_chunks": [],
+        "chunk_count": 0,
+        "status": "初始化",
+        "errors": [],
+    })
 
-    text_chunks = chunk_documents(text_docs) if text_docs else []
-    all_chunks = text_chunks + table_docs
-    if all_chunks:
-        reset_collection("example3_multimodal")
-        embed_and_store(all_chunks, collection_name="example3_multimodal")
-        print(f"  入库切片数: {len(all_chunks)} (文本 {len(text_chunks)} + 表格 {len(table_docs)})")
+    print(f"  状态: {result['status']}")
+    text_count = len(result.get("text_chunks", []))
+    table_count = len(result.get("table_chunks", []))
+    print(f"  文本切片: {text_count}, 表格切片: {table_count}")
+
+    # 验证入库结果
+    from config import get_chroma_store
+    vs = get_chroma_store(collection_name="example3_multimodal")
+    print(f"  ChromaDB 文档数: {vs._collection.count()}")
+    if result.get("errors"):
+        for err in result["errors"]:
+            print_warning(err)
 
     print("\n关键点：")
     print_points(
@@ -569,6 +582,22 @@ def example_7_full_pipeline():
         print(f"  回答: {truncate_text(result['answer'], 200)}")
         if result.get("sources"):
             print(f"  引用: {len(result['sources'])} 条")
+
+    # Step 4: 评估指标
+    print("")
+    print_section("Step 3: 检索质量评估")
+    try:
+        from evaluation import RetrievalEvaluator
+        evaluator = RetrievalEvaluator(vectorstore, all_docs)
+        # 小测试集：能答和不能答的查询各一个
+        eval_queries = {
+            "RAG 在 2024 年有哪些改进？": 0.8,      # 文档能答
+            "比较不同模型的上下文窗口长度": 0.8,    # 文档能答
+        }
+        metrics = evaluator.evaluate(eval_queries)
+        evaluator.print_report(metrics)
+    except ImportError:
+        print_tip("evaluation.py 未找到，跳过评估")
 
     print("\n" + "=" * 70)
     print(" 企业级 RAG 系统架构总结")

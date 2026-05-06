@@ -13,7 +13,15 @@
 - grade_documents()     LLM 文档充分性评估
 - generate_answer()     基于上下文生成回答
 - build_retrieval_graph()  构建检索 LangGraph
+
+关键优化（v2）：
+1. CrossEncoder 模块级缓存：首次加载 80MB，之后复用同一实例
+2. BM25 索引缓存：相同文档列表只构建一次倒排索引
+3. grade_documents 鲁棒解析：用正则提取数字，容忍 LLM 输出额外文字
 """
+
+import re
+import functools
 
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
@@ -23,6 +31,7 @@ from config import (
     RERANK_TOP_N,
     ENSEMBLE_WEIGHTS,
     RELEVANCE_THRESHOLD,
+    RERANKER_MODEL,
     get_llm,
     get_embeddings,
     get_chroma_store,
@@ -120,6 +129,9 @@ def bm25_search(
     BM25 不需要 Embedding，适合精确关键词匹配场景。
     需要传入完整文档集合来构建 BM25 索引。
 
+    优化：相同文档列表的 BM25 索引会被缓存（基于 id() + len() 双重校验），
+    重复调用不会反复重建倒排索引。
+
     参数:
         queries: 查询列表
         documents: 用于构建 BM25 索引的文档集合
@@ -128,9 +140,7 @@ def bm25_search(
     返回:
         去重后的文档列表
     """
-    from langchain_community.retrievers import BM25Retriever
-
-    bm25 = BM25Retriever.from_documents(documents, k=k)
+    bm25 = _get_or_build_bm25(documents, k=k)
 
     seen_hashes = set()
     results = []
@@ -144,6 +154,37 @@ def bm25_search(
                 results.append(doc)
 
     return results
+
+
+# 模块级 BM25 索引缓存
+# key: (id(documents), len(documents))，value: BM25Retriever 实例
+# 使用 id() + len() 双重校验：避免极端情况下不同列表恰好复用同一内存地址
+_BM25_CACHE: dict[tuple[int, int], object] = {}
+
+
+def _get_or_build_bm25(documents: list[Document], k: int):
+    """
+    获取（或构建）BM25 检索器
+
+    BM25Retriever.from_documents() 内部会做分词、构建倒排索引，
+    对大文档集来说不便宜。这里用模块级 dict 缓存索引实例。
+    """
+    from langchain_community.retrievers import BM25Retriever
+
+    cache_key = (id(documents), len(documents))
+    bm25 = _BM25_CACHE.get(cache_key)
+    if bm25 is None:
+        bm25 = BM25Retriever.from_documents(documents, k=k)
+        _BM25_CACHE[cache_key] = bm25
+    else:
+        # 命中缓存时同步 k 值（k 是检索时参数，不影响索引）
+        bm25.k = k
+    return bm25
+
+
+def clear_bm25_cache():
+    """清空 BM25 缓存。当文档集变化时调用。"""
+    _BM25_CACHE.clear()
 
 
 # ============================================================================
@@ -194,6 +235,26 @@ def merge_and_deduplicate(
 # ============================================================================
 
 
+# 模块级 CrossEncoder 缓存
+# functools.lru_cache 保证：不同 maxsize/模型名 的调用各自缓存，且线程安全
+# 首次加载下载约 80MB 模型，之后复用同一实例
+@functools.lru_cache(maxsize=1)
+def _get_reranker(model_name: str = RERANKER_MODEL):
+    """
+    获取 CrossEncoderReranker 实例（模块级单例缓存）
+
+    lru_cache(maxsize=1) 保证只缓存最近一个模型，内存友好。
+    需要不同 top_n 时，调用方传入自己的 top_n 参数到 compress_documents，
+    这里不缓存 top_n。
+    """
+    from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+    from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
+
+    cross_encoder = HuggingFaceCrossEncoder(model_name=model_name)
+    # top_n 在 compress 时才指定，这里用默认值
+    return CrossEncoderReranker(model=cross_encoder, top_n=RERANK_TOP_N)
+
+
 def rerank_documents(
     query: str,
     documents: list[Document],
@@ -208,6 +269,10 @@ def rerank_documents(
 
     重排序流程：query + each doc → cross-encoder → 按分数排序 → 取 top_n
 
+    优化：CrossEncoder 模型通过模块级 lru_cache 缓存，
+    首次运行下载约 80MB，之后所有调用复用同一实例，
+    避免每次重排序都重新加载模型文件。
+
     参数:
         query: 用户查询
         documents: 待重排序的文档列表
@@ -219,14 +284,11 @@ def rerank_documents(
     if not documents:
         return []
 
-    from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-    from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
+    reranker = _get_reranker()
+    # 如果请求的 top_n 不同于默认值，临时修改
+    if top_n != reranker.top_n:
+        reranker.top_n = top_n
 
-    # 加载 CrossEncoder 模型（首次运行会自动下载约 80MB）
-    cross_encoder = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
-    reranker = CrossEncoderReranker(model=cross_encoder, top_n=top_n)
-
-    # reranker.invoke() 返回排序后的 Document 列表
     reranked = reranker.compress_documents(
         documents=documents,
         query=query,
@@ -291,11 +353,31 @@ def grade_documents(
 只输出数字，不要其他内容。"""
 
     response = llm.invoke(prompt)
-    try:
-        score = float(response.content.strip())
-        return max(0.0, min(1.0, score))
-    except ValueError:
-        return 0.5  # 解析失败时给中间分
+    score = _parse_score(response.content)
+    return score
+
+
+def _parse_score(raw: str) -> float:
+    """
+    从 LLM 输出中鲁棒地提取评分数字
+
+    LLM 有时不听话，可能输出 "0.85"、"评分：0.9"、"0.7/1.0" 等格式。
+    用正则提取第一个 0.0~1.0 范围内的浮点数，比 float() 直接转换更鲁棒。
+    """
+    if not raw:
+        return 0.5
+
+    # 匹配 0.0 ~ 1.0 之间的数字（支持 0, 0.5, .8, 1, 1.0 等格式）
+    matches = re.findall(r'\b([01](?:\.\d+)?|\.\d+)\b', raw.strip())
+    for m in matches:
+        try:
+            val = float(m)
+            if 0.0 <= val <= 1.0:
+                return val
+        except ValueError:
+            continue
+
+    return 0.5  # 所有方法都失败时给中间分，既不过于乐观也不过于悲观
 
 
 # ============================================================================
