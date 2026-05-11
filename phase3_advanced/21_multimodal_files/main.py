@@ -231,7 +231,7 @@ def main():
         print("  ✅ 图片可以是 URL、base64 data URI 或本地文件")
         print("  ✅ PyPDFLoader 解析纯文本 PDF，Unstructured 解析复杂布局")
         print("\n下一步：")
-        print("  phase4_projects - 综合实战项目")
+        print("  phase5_projects - 综合实战项目")
 
     except KeyboardInterrupt:
         print("\n\n程序中断")

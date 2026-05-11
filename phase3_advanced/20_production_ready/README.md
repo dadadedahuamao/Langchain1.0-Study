@@ -263,5 +263,5 @@ except (ConnectionError, TimeoutError) as e:  # 只 catch 网络问题
 
 ## 下一步学习
 
-- **phase4_projects**：将 checkpoint、重试、错误处理、子图等知识整合到完整项目
+- **phase5_projects**：将 checkpoint、重试、错误处理、子图等知识整合到完整项目
 - 推荐阅读：[LangGraph Error Handling Patterns for Production](https://focused.io/lab/langgraph-agent-error-handling-production)

@@ -521,7 +521,7 @@ def main():
         print("  ✅ 步数限制和 Token 监控防止成本失控")
         print("  ✅ LangSmith 提供全链路可观测性")
         print("\n下一步：")
-        print("  phase4_projects - 用所学知识构建完整项目")
+        print("  phase5_projects - 用所学知识构建完整项目")
 
     except KeyboardInterrupt:
         print("\n\n程序中断")
