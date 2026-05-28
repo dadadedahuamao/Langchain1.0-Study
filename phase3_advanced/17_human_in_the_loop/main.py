@@ -431,12 +431,18 @@ def example_5_tool_call_approval():
             return {}
         return {"result": f"已执行 {state['action']}：操作成功完成"}
 
-    def route_after_approval(state: State):
+    # ★ 两个路由函数，分别对应两个决策点：
+    #   1. plan_action 之后：action 是否为敏感操作？
+    #   2. request_approval 之后：用户是否批准？
+    def route_after_plan(state: State):
         if state["action"] == "none":
-            return END
+            return END  # 非敏感操作，直接结束
+        return "request_approval"  # 敏感操作 → 先进审批节点
+
+    def route_after_approval(state: State):
         if state["approved"]:
-            return "execute_action"
-        return END
+            return "execute_action"  # 用户批准 → 执行操作
+        return END  # 用户拒绝 → 直接结束
 
     builder = StateGraph(State)
     builder.add_node("plan_action", plan_action)
@@ -444,8 +450,8 @@ def example_5_tool_call_approval():
     builder.add_node("execute_action", execute_action)
 
     builder.add_edge(START, "plan_action")
-    builder.add_conditional_edges("plan_action", route_after_approval)
-    builder.add_edge("request_approval", "execute_action")
+    builder.add_conditional_edges("plan_action", route_after_plan)
+    builder.add_conditional_edges("request_approval", route_after_approval)
     builder.add_edge("execute_action", END)
 
     checkpointer = InMemorySaver()
