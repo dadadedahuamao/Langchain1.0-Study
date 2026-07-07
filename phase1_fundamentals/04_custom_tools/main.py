@@ -25,9 +25,9 @@ from langchain.chat_models import init_chat_model
 from langchain_core.tools import tool
 
 # 导入自定义工具
-from weather import get_weather
-from calculator import calculator
-from web_search import web_search
+from tools.weather import get_weather
+from tools.calculator import calculator
+from tools.web_search import web_search
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
