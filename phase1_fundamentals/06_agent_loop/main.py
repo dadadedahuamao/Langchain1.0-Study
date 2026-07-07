@@ -19,8 +19,8 @@ sys.path.insert(0, os.path.join(parent_dir, '04_custom_tools', 'tools'))
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
-from calculator import calculator
-from weather import get_weather
+from tools.calculator import calculator
+from tools.weather import get_weather
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
